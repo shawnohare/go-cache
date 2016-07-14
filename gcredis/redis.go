@@ -23,6 +23,11 @@ type Cache struct {
 	HashKeys bool
 }
 
+// Key wraps the helpers.Key function by passing in the cache's HashKeys flag.
+func (c *Cache) Key(k string, namespace ...string) string {
+	return helpers.Key(c.HashKeys, k, namespace...)
+}
+
 // wrapper for closing a connection that ignores errors.  This is defined
 // primarily to avoid handling the error.
 func (c *Cache) Close(conn redis.Conn) {
@@ -67,7 +72,7 @@ func (c *Cache) Set(k string, value interface{}, namespace ...string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Do("SET", helpers.Key(c.HashKeys, k, namespace...), data)
+	_, err = conn.Do("SET", c.Key(k, namespace...), data)
 	return err
 }
 
@@ -80,7 +85,7 @@ func (c *Cache) HSet(k string, field string, value interface{}, namespace ...str
 	if err != nil {
 		return err
 	}
-	_, err = conn.Do("HMSET", helpers.Key(c.HashKeys, k, namespace...), field, data)
+	_, err = conn.Do("HMSET", c.Key(k, namespace...), field, data)
 	return err
 }
 
@@ -88,21 +93,21 @@ func (c *Cache) HSet(k string, field string, value interface{}, namespace ...str
 func (c *Cache) Get(k string, namespace ...string) ([]byte, bool, error) {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
-	return c.Unmarshal(conn.Do("GET", helpers.Key(c.HashKeys, k, namespace...)))
+	return c.Unmarshal(conn.Do("GET", c.Key(k, namespace...)))
 }
 
 // HGet wraps the Cache Hash Get function.
 func (c *Cache) HGet(k string, field string, namespace ...string) ([]byte, bool, error) {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
-	return c.Unmarshal(conn.Do("HGET", helpers.Key(c.HashKeys, k, namespace...), field))
+	return c.Unmarshal(conn.Do("HGET", c.Key(k, namespace...), field))
 }
 
 // Del deletes the value stored at helpers.Key(k, namespace)
 func (c *Cache) Del(k string, namespace ...string) error {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
-	_, err := conn.Do("DEL", helpers.Key(c.HashKeys, k, namespace...))
+	_, err := conn.Do("DEL", c.Key(k, namespace...))
 	return err
 }
 
@@ -110,6 +115,6 @@ func (c *Cache) Del(k string, namespace ...string) error {
 func (c *Cache) HDel(k string, field string, namespace ...string) error {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
-	_, err := conn.Do("HDEL", helpers.Key(c.HashKeys, k, namespace...), field)
+	_, err := conn.Do("HDEL", c.Key(k, namespace...), field)
 	return err
 }

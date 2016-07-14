@@ -1,4 +1,4 @@
-package helpers
+package gcutils
 
 import (
 	"crypto/sha1"

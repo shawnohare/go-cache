@@ -1,9 +1,9 @@
-package helpers_test
+package gcutils_test
 
 import (
 	"testing"
 
-	"github.com/shawnohare/go-cache/helpers"
+	"github.com/shawnohare/go-cache/gcutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +18,7 @@ func TestKey(t *testing.T) {
 			"",
 			nil,
 			true,
-			helpers.Sha1(""),
+			gcutils.Sha1(""),
 		},
 		{
 			"",
@@ -30,19 +30,19 @@ func TestKey(t *testing.T) {
 			"key",
 			nil,
 			true,
-			helpers.Sha1("key"),
+			gcutils.Sha1("key"),
 		},
 		{
 			"key",
 			[]string{},
 			true,
-			helpers.Sha1("key"),
+			gcutils.Sha1("key"),
 		},
 		{
 			"key",
 			[]string{"n0", "n1"},
 			true,
-			"n0:n1:" + helpers.Sha1("key"),
+			"n0:n1:" + gcutils.Sha1("key"),
 		},
 		{
 			"key",
@@ -53,6 +53,6 @@ func TestKey(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		assert.Equal(t, tt.out, helpers.Key(tt.hash, tt.k, tt.ns...))
+		assert.Equal(t, tt.out, gcutils.Key(tt.hash, tt.k, tt.ns...))
 	}
 }

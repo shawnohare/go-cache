@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/garyburd/redigo/redis"
-	"github.com/shawnohare/go-cache/helpers"
+	"github.com/shawnohare/go-cache/gcutils"
 )
 
 // type Pool interface {
@@ -23,9 +23,9 @@ type Cache struct {
 	HashKeys bool
 }
 
-// Key wraps the helpers.Key function by passing in the cache's HashKeys flag.
+// Key wraps the gcutils.Key function by passing in the cache's HashKeys flag.
 func (c *Cache) Key(k string, namespace ...string) string {
-	return helpers.Key(c.HashKeys, k, namespace...)
+	return gcutils.Key(c.HashKeys, k, namespace...)
 }
 
 // wrapper for closing a connection that ignores errors.  This is defined
@@ -63,7 +63,7 @@ func (c *Cache) Unmarshal(response interface{}, err error) ([]byte, bool, error)
 }
 
 // Set saves the (key, value) pair in Cache using the key
-// helpers.Key(k, namespace...).
+// gcutils.Key(k, namespace...).
 func (c *Cache) Set(k string, value interface{}, namespace ...string) error {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
@@ -76,7 +76,7 @@ func (c *Cache) Set(k string, value interface{}, namespace ...string) error {
 	return err
 }
 
-// HSet stores the (field, value) pair in the hash keyed by helpers.Key(k, namespace).
+// HSet stores the (field, value) pair in the hash keyed by gcutils.Key(k, namespace).
 func (c *Cache) HSet(k string, field string, value interface{}, namespace ...string) error {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
@@ -89,7 +89,7 @@ func (c *Cache) HSet(k string, field string, value interface{}, namespace ...str
 	return err
 }
 
-// Get the value stored at helpers.Key(k, namespace).
+// Get the value stored at gcutils.Key(k, namespace).
 func (c *Cache) Get(k string, namespace ...string) ([]byte, bool, error) {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
@@ -103,7 +103,7 @@ func (c *Cache) HGet(k string, field string, namespace ...string) ([]byte, bool,
 	return c.Unmarshal(conn.Do("HGET", c.Key(k, namespace...), field))
 }
 
-// Del deletes the value stored at helpers.Key(k, namespace)
+// Del deletes the value stored at gcutils.Key(k, namespace)
 func (c *Cache) Del(k string, namespace ...string) error {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
@@ -111,7 +111,7 @@ func (c *Cache) Del(k string, namespace ...string) error {
 	return err
 }
 
-// HDel deletes the field from the hash keyed by helpers.Key(k, namespace)
+// HDel deletes the field from the hash keyed by gcutils.Key(k, namespace)
 func (c *Cache) HDel(k string, field string, namespace ...string) error {
 	conn := c.Pool.Get()
 	defer c.Close(conn)

@@ -1,9 +1,9 @@
-package gcutils_test
+package storeutils_test
 
 import (
 	"testing"
 
-	"github.com/shawnohare/go-cache/gcutils"
+	"github.com/shawnohare/go-store/storeutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +18,7 @@ func TestKey(t *testing.T) {
 			"",
 			nil,
 			true,
-			gcutils.Sha1(""),
+			storeutils.Sha1(""),
 		},
 		{
 			"",
@@ -30,19 +30,19 @@ func TestKey(t *testing.T) {
 			"key",
 			nil,
 			true,
-			gcutils.Sha1("key"),
+			storeutils.Sha1("key"),
 		},
 		{
 			"key",
 			[]string{},
 			true,
-			gcutils.Sha1("key"),
+			storeutils.Sha1("key"),
 		},
 		{
 			"key",
 			[]string{"n0", "n1"},
 			true,
-			"n0:n1:" + gcutils.Sha1("key"),
+			"n0:n1:" + storeutils.Sha1("key"),
 		},
 		{
 			"key",
@@ -53,6 +53,6 @@ func TestKey(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		assert.Equal(t, tt.out, gcutils.Key(tt.hash, tt.ns, tt.k))
+		assert.Equal(t, tt.out, storeutils.Key(tt.hash, tt.ns, tt.k))
 	}
 }

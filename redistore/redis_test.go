@@ -1,4 +1,4 @@
-package gcredis_test
+package redistore_test
 
 import (
 	"encoding/json"
@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/garyburd/redigo/redis"
-	"github.com/shawnohare/go-cache/gcredis"
-	"github.com/shawnohare/go-cache/gcutils"
+	"github.com/shawnohare/go-store/redistore"
+	"github.com/shawnohare/go-store/storeutils"
 
 	. "gopkg.in/check.v1"
 )
@@ -24,7 +24,7 @@ func Test(t *testing.T) { TestingT(t) }
 // RedisSuite performs tests that involve actually testing to a Redis instance
 // on the default port.
 type RedisSuite struct {
-	cache *gcredis.Cache
+	cache *redistore.Store
 }
 
 var _ = Suite(new(RedisSuite))
@@ -35,11 +35,11 @@ func (s *RedisSuite) SetUpSuite(c *C) {
 	}
 	// Connect to local redis.
 
-	s.cache = &gcredis.Cache{Pool: pool, HashKeys: true}
-	_ = s.cache.Set(gcutils.Namespace("test"), "key", "val")
-	_ = s.cache.Set(gcutils.Namespace("test"), "intkey", 1)
-	_ = s.cache.Set(gcutils.Namespace("test"), "objkey", testObj{X: 2})
-	_ = s.cache.HSet(gcutils.Namespace("test"), "hkey", "field", "hval")
+	s.cache = &redistore.Store{Pool: redistore.NewPool(), HashKeys: true}
+	_ = s.cache.Set(storeutils.Namespace("test"), "key", "val")
+	_ = s.cache.Set(storeutils.Namespace("test"), "intkey", 1)
+	_ = s.cache.Set(storeutils.Namespace("test"), "objkey", testObj{X: 2})
+	_ = s.cache.HSet(storeutils.Namespace("test"), "hkey", "field", "hval")
 }
 
 func (s *RedisSuite) SuiteTearDown(c *C) {
@@ -77,7 +77,7 @@ func (s *RedisSuite) TestCacheGetObj(c *C) {
 }
 
 func (s *RedisSuite) TestCacheGetNoExist(c *C) {
-	v, ok, err := s.cache.Get([]string{"test"}, "gcredis-key-does-not-exist")
+	v, ok, err := s.cache.Get([]string{"test"}, "redistore-key-does-not-exist")
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, false)
 	c.Assert(v, IsNil)
@@ -91,7 +91,7 @@ func (s *RedisSuite) TestCacheHGetString(c *C) {
 }
 
 func (s *RedisSuite) TestCacheHGetNoExist(c *C) {
-	v, ok, err := s.cache.HGet([]string{"test"}, "gcredis-key-does-not-exist", "field")
+	v, ok, err := s.cache.HGet([]string{"test"}, "redistore-key-does-not-exist", "field")
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, false)
 	c.Assert(v, IsNil)

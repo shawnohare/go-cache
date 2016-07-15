@@ -1,4 +1,4 @@
-package gcutils
+package storeutils
 
 import (
 	"crypto/sha1"

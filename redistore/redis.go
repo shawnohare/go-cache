@@ -12,13 +12,9 @@ import (
 // 	Get() redis.Conn
 // }
 
-// Cache is a thin cache wrapper over a redigo.Pool that adds some basic typing
-// to the redigo commands.
-//
-// If HashKeys is true, the Cache will sha1 hash the final component of
-// all namespaced keys.  For example, the key, namespace pair
-// (k, []string{n0, n1}) will map to n0:n1:k -> n0:n1:sha1(k).
-// Otherwise, it maps to n0:n1:k.
+// Store is a simple layer on top of Redis that exposes typed versions
+// of Redis commands and a Key helper function that can handle namespacing
+// in a consistent fashion.
 type Store struct {
 	Pool     *redis.Pool
 	HashKeys bool
@@ -52,8 +48,8 @@ func NewPool(url ...string) *redis.Pool {
 }
 
 // Key wraps the storeutils.Key function by passing in the cache's HashKeys flag.
-func (s *Store) Key(namespace []string, k string) string {
-	return storeutils.Key(s.HashKeys, namespace, k)
+func (s *Store) Key(namespace ...string) string {
+	return storeutils.Key(s.HashKeys, namespace...)
 }
 
 // wrapper for closing a connection that ignores errors.  This is defined
@@ -92,7 +88,7 @@ func (s *Store) Unmarshal(response interface{}, err error) ([]byte, bool, error)
 
 // Set saves the (key, value) pair in Cache using the key
 // storeutils.Key(namespace, k).
-func (s *Store) Set(namespace []string, k string, value interface{}) error {
+func (s *Store) Set(key string, value interface{}) error {
 	conn := s.Pool.Get()
 	defer s.Close(conn)
 
@@ -100,12 +96,12 @@ func (s *Store) Set(namespace []string, k string, value interface{}) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Do("SET", s.Key(namespace, k), data)
+	_, err = conn.Do("SET", key, data)
 	return err
 }
 
-// HSet stores the (field, value) pair in the hash keyed by storeutils.Key(k, namespace).
-func (s *Store) HSet(namespace []string, k string, field string, value interface{}) error {
+// HSet stores the (field, value) pair in the hash with the given key.
+func (s *Store) HSet(key string, field string, value interface{}) error {
 	conn := s.Pool.Get()
 	defer s.Close(conn)
 
@@ -113,36 +109,36 @@ func (s *Store) HSet(namespace []string, k string, field string, value interface
 	if err != nil {
 		return err
 	}
-	_, err = conn.Do("HMSET", s.Key(namespace, k), field, data)
+	_, err = conn.Do("HMSET", key, field, data)
 	return err
 }
 
-// Get the value stored at storeutils.Key(k, namespace).
-func (s *Store) Get(namespace []string, k string) ([]byte, bool, error) {
+// Get the value stored at the given key.
+func (s *Store) Get(key string) ([]byte, bool, error) {
 	conn := s.Pool.Get()
 	defer s.Close(conn)
-	return s.Unmarshal(conn.Do("GET", s.Key(namespace, k)))
+	return s.Unmarshal(conn.Do("GET", key))
 }
 
 // HGet wraps the Cache Hash Get function.
-func (s *Store) HGet(namespace []string, k string, field string) ([]byte, bool, error) {
+func (s *Store) HGet(key string, field string) ([]byte, bool, error) {
 	conn := s.Pool.Get()
 	defer s.Close(conn)
-	return s.Unmarshal(conn.Do("HGET", s.Key(namespace, k), field))
+	return s.Unmarshal(conn.Do("HGET", key, field))
 }
 
 // Del deletes the value stored at storeutils.Key(k, namespace)
-func (s *Store) Del(namespace []string, k string) error {
+func (s *Store) Del(key string) error {
 	conn := s.Pool.Get()
 	defer s.Close(conn)
-	_, err := conn.Do("DEL", s.Key(namespace, k))
+	_, err := conn.Do("DEL", key)
 	return err
 }
 
 // HDel deletes the field from the hash keyed by storeutils.Key(k, namespace)
-func (s *Store) HDel(namespace []string, k string, field string) error {
+func (s *Store) HDel(key string, field string) error {
 	conn := s.Pool.Get()
 	defer s.Close(conn)
-	_, err := conn.Do("HDEL", s.Key(namespace, k), field)
+	_, err := conn.Do("HDEL", key, field)
 	return err
 }

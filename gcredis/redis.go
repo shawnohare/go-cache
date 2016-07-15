@@ -2,6 +2,7 @@ package gcredis
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/shawnohare/go-cache/gcutils"
@@ -21,6 +22,33 @@ import (
 type Cache struct {
 	Pool     *redis.Pool
 	HashKeys bool
+}
+
+// Connect is a helper function that creates a redis.Pool with some standard
+// settings. If no url is provided, a Redis instance running at
+// localhost:6379 is assumed.  Otherwise, the provided url is used to connect.
+func Pool(url ...string) *redis.Pool {
+	var actualURL = ":6379"
+	if len(url) > 0 {
+		actualURL = url[0]
+	}
+
+	pool := &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", actualURL)
+			if err != nil {
+				return nil, err
+			}
+			return c, err
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+	}
+	return pool
 }
 
 // Key wraps the gcutils.Key function by passing in the cache's HashKeys flag.

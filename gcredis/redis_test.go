@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"testing"
-	"time"
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/shawnohare/go-cache/gcredis"
@@ -22,6 +21,8 @@ type testObj struct {
 
 func Test(t *testing.T) { TestingT(t) }
 
+// RedisSuite performs tests that involve actually testing to a Redis instance
+// on the default port.
 type RedisSuite struct {
 	cache *gcredis.Cache
 }
@@ -33,21 +34,6 @@ func (s *RedisSuite) SetUpSuite(c *C) {
 		c.Skip("-local not provided")
 	}
 	// Connect to local redis.
-	pool := &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", ":6379")
-			if err != nil {
-				return nil, err
-			}
-			return c, err
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
 
 	s.cache = &gcredis.Cache{Pool: pool, HashKeys: true}
 	_ = s.cache.Set(gcutils.Namespace("test"), "key", "val")

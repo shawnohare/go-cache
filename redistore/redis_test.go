@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"testing"
+	"time"
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/shawnohare/go-store/redistore"
@@ -50,14 +51,14 @@ func (s *RedisSuite) SuiteTearDown(c *C) {
 	_ = s.store.HDel(s.store.Key("test", "hkey"), "field")
 }
 
-func (s *RedisSuite) TeststoreGetString(c *C) {
+func (s *RedisSuite) TestStoreGetString(c *C) {
 	v, ok, err := s.store.Get(s.store.Key("test", "key"))
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, true)
 	c.Assert(string(v), Equals, `val`)
 }
 
-func (s *RedisSuite) TeststoreGetInt(c *C) {
+func (s *RedisSuite) TestStoreGetInt(c *C) {
 	v, ok, err := s.store.Get(s.store.Key("test", "intkey"))
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, true)
@@ -65,7 +66,7 @@ func (s *RedisSuite) TeststoreGetInt(c *C) {
 	c.Assert(vint, Equals, 1)
 }
 
-func (s *RedisSuite) TeststoreGetObj(c *C) {
+func (s *RedisSuite) TestStoreGetObj(c *C) {
 	v, ok, err := s.store.Get(s.store.Key("test", "objkey"))
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, true)
@@ -76,34 +77,50 @@ func (s *RedisSuite) TeststoreGetObj(c *C) {
 	c.Assert(actual, Equals, expected)
 }
 
-func (s *RedisSuite) TeststoreGetNoExist(c *C) {
+func (s *RedisSuite) TestStoreGetNoExist(c *C) {
 	v, ok, err := s.store.Get("redistore-key-does-not-exist")
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, false)
 	c.Assert(v, IsNil)
 }
 
-func (s *RedisSuite) TeststoreHGetString(c *C) {
+func (s *RedisSuite) TestStoreHGetString(c *C) {
 	v, ok, err := s.store.HGet(s.store.Key("test", "hkey"), "field")
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, true)
 	c.Assert(string(v), Equals, `hval`)
 }
 
-func (s *RedisSuite) TeststoreHGetNoExist(c *C) {
+func (s *RedisSuite) TestStoreHGetNoExist(c *C) {
 	v, ok, err := s.store.HGet("redistore-key-does-not-exist", "field")
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, false)
 	c.Assert(v, IsNil)
 }
 
-func (s *RedisSuite) TeststoreSetObj(c *C) {
+func (s *RedisSuite) TestStoreSetObj(c *C) {
 	err := s.store.Set("new obj key", testObj{X: 3})
 	defer func() { _ = s.store.Del("new obj key") }()
 	c.Assert(err, IsNil)
 }
 
-func (s *RedisSuite) TeststoreDel(c *C) {
+func (s *RedisSuite) TestStoreSetEX(c *C) {
+	err := s.store.SetEX("expiry key", "val", 1)
+	time.Sleep(time.Second + 2*time.Millisecond)
+	_, ok, err := s.store.Get("expiry key")
+	c.Assert(err, IsNil)
+	c.Assert(ok, Equals, false)
+}
+
+func (s *RedisSuite) TestStoreSetPX(c *C) {
+	err := s.store.SetPX("expiry key", "val", 1)
+	time.Sleep(2 * time.Millisecond)
+	_, ok, err := s.store.Get("expiry key")
+	c.Assert(err, IsNil)
+	c.Assert(ok, Equals, false)
+}
+
+func (s *RedisSuite) TestStoreDel(c *C) {
 	_ = s.store.Set("new key", 1)
 	err := s.store.Del("new key")
 	c.Assert(err, IsNil)
@@ -112,7 +129,7 @@ func (s *RedisSuite) TeststoreDel(c *C) {
 	c.Assert(ok, Equals, false)
 }
 
-func (s *RedisSuite) TeststoreHDel(c *C) {
+func (s *RedisSuite) TestStoreHDel(c *C) {
 	k := "new hkey"
 	f := "field"
 	_ = s.store.HSet(k, f, 1)

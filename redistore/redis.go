@@ -100,6 +100,34 @@ func (s *Store) Set(key string, value interface{}) error {
 	return err
 }
 
+// SetEX sets a key with the provided expiry in seconds.  It calls the
+// standard Redis Set command and passes the EX option.
+func (s *Store) SetEX(key string, value interface{}, expiryInSeconds int) error {
+	conn := s.Pool.Get()
+	defer s.Close(conn)
+
+	data, err := s.Marshal(value)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Do("SET", key, data, "EX", expiryInSeconds)
+	return err
+}
+
+// SetEX sets a key with the provided expiry in milliseconds.  It calls the
+// standard Redis Set command and passes the EX option.
+func (s *Store) SetPX(key string, value interface{}, expiryInMilliseconds int) error {
+	conn := s.Pool.Get()
+	defer s.Close(conn)
+
+	data, err := s.Marshal(value)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Do("SET", key, data, "PX", expiryInMilliseconds)
+	return err
+}
+
 // HSet stores the (field, value) pair in the hash with the given key.
 func (s *Store) HSet(key string, field string, value interface{}) error {
 	conn := s.Pool.Get()
@@ -120,7 +148,7 @@ func (s *Store) Get(key string) ([]byte, bool, error) {
 	return s.Unmarshal(conn.Do("GET", key))
 }
 
-// HGet wraps the Cache Hash Get function.
+// HGet wraps the redis HGet function.
 func (s *Store) HGet(key string, field string) ([]byte, bool, error) {
 	conn := s.Pool.Get()
 	defer s.Close(conn)

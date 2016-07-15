@@ -53,6 +53,6 @@ func TestKey(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		assert.Equal(t, tt.out, gcutils.Key(tt.hash, tt.k, tt.ns...))
+		assert.Equal(t, tt.out, gcutils.Key(tt.hash, tt.ns, tt.k))
 	}
 }

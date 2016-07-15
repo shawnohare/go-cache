@@ -8,6 +8,7 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/shawnohare/go-cache/gcredis"
+	"github.com/shawnohare/go-cache/gcutils"
 
 	. "gopkg.in/check.v1"
 )
@@ -49,28 +50,29 @@ func (s *RedisSuite) SetUpSuite(c *C) {
 	}
 
 	s.cache = &gcredis.Cache{Pool: pool, HashKeys: true}
-	_ = s.cache.Set("key", "val", "test")
-	_ = s.cache.Set("intkey", 1, "test")
-	_ = s.cache.Set("objkey", testObj{X: 2}, "test")
-	_ = s.cache.HSet("hkey", "field", "hval", "test")
+	_ = s.cache.Set(gcutils.Namespace("test"), "key", "val")
+	_ = s.cache.Set(gcutils.Namespace("test"), "intkey", 1)
+	_ = s.cache.Set(gcutils.Namespace("test"), "objkey", testObj{X: 2})
+	_ = s.cache.HSet(gcutils.Namespace("test"), "hkey", "field", "hval")
 }
 
 func (s *RedisSuite) SuiteTearDown(c *C) {
-	_ = s.cache.Del("key", "test")
-	_ = s.cache.Del("intkey", "test")
-	_ = s.cache.Del("objkey", "test")
-	_ = s.cache.HDel("hkey", "field", "test")
+	_ = s.cache.Del([]string{"test"}, "key")
+	_ = s.cache.Del([]string{"test"}, "intkey")
+	_ = s.cache.Del([]string{"test"}, "objkey")
+	_ = s.cache.HDel([]string{"test"}, "hkey", "field")
+	_ = s.cache.Del([]string{"test"}, "hkey")
 }
 
 func (s *RedisSuite) TestCacheGetString(c *C) {
-	v, ok, err := s.cache.Get("key", "test")
+	v, ok, err := s.cache.Get([]string{"test"}, "key")
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, true)
 	c.Assert(string(v), Equals, `val`)
 }
 
 func (s *RedisSuite) TestCacheGetInt(c *C) {
-	v, ok, err := s.cache.Get("intkey", "test")
+	v, ok, err := s.cache.Get([]string{"test"}, "intkey")
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, true)
 	vint, _ := redis.Int(v, err)
@@ -78,7 +80,7 @@ func (s *RedisSuite) TestCacheGetInt(c *C) {
 }
 
 func (s *RedisSuite) TestCacheGetObj(c *C) {
-	v, ok, err := s.cache.Get("objkey", "test")
+	v, ok, err := s.cache.Get([]string{"test"}, "objkey")
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, true)
 
@@ -89,37 +91,37 @@ func (s *RedisSuite) TestCacheGetObj(c *C) {
 }
 
 func (s *RedisSuite) TestCacheGetNoExist(c *C) {
-	v, ok, err := s.cache.Get("gcredis-key-does-not-exist", "test")
+	v, ok, err := s.cache.Get([]string{"test"}, "gcredis-key-does-not-exist")
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, false)
 	c.Assert(v, IsNil)
 }
 
 func (s *RedisSuite) TestCacheHGetString(c *C) {
-	v, ok, err := s.cache.HGet("hkey", "field", "test")
+	v, ok, err := s.cache.HGet([]string{"test"}, "hkey", "field")
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, true)
 	c.Assert(string(v), Equals, `hval`)
 }
 
 func (s *RedisSuite) TestCacheHGetNoExist(c *C) {
-	v, ok, err := s.cache.HGet("gcredis-key-does-not-exist", "field", "test")
+	v, ok, err := s.cache.HGet([]string{"test"}, "gcredis-key-does-not-exist", "field")
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, false)
 	c.Assert(v, IsNil)
 }
 
 func (s *RedisSuite) TestCacheSetObj(c *C) {
-	err := s.cache.Set("new obj key", testObj{X: 3})
-	defer func() { _ = s.cache.Del("new obj key") }()
+	err := s.cache.Set(nil, "new obj key", testObj{X: 3})
+	defer func() { _ = s.cache.Del(nil, "new obj key") }()
 	c.Assert(err, IsNil)
 }
 
 func (s *RedisSuite) TestCacheDel(c *C) {
-	_ = s.cache.Set("new key", 1, "test")
-	err := s.cache.Del("new key", "test")
+	_ = s.cache.Set(nil, "new key", 1)
+	err := s.cache.Del(nil, "new key")
 	c.Assert(err, IsNil)
-	_, ok, err := s.cache.Get("new key", "test")
+	_, ok, err := s.cache.Get(nil, "new key")
 	c.Assert(err, IsNil)
 	c.Assert(ok, Equals, false)
 }
@@ -127,10 +129,10 @@ func (s *RedisSuite) TestCacheDel(c *C) {
 func (s *RedisSuite) TestCacheHDel(c *C) {
 	k := "new hkey"
 	f := "field"
-	n := "test"
-	_ = s.cache.HSet(k, f, 1, n)
-	err := s.cache.HDel(k, f, n)
+	ns := []string{"test"}
+	_ = s.cache.HSet(ns, k, f, 1)
+	err := s.cache.HDel(ns, k, f)
 	c.Assert(err, IsNil)
-	_, ok, err := s.cache.HGet(k, f, n)
+	_, ok, err := s.cache.HGet(ns, k, f)
 	c.Assert(ok, Equals, false)
 }

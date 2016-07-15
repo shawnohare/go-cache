@@ -24,8 +24,8 @@ type Cache struct {
 }
 
 // Key wraps the gcutils.Key function by passing in the cache's HashKeys flag.
-func (c *Cache) Key(k string, namespace ...string) string {
-	return gcutils.Key(c.HashKeys, k, namespace...)
+func (c *Cache) Key(namespace []string, k string) string {
+	return gcutils.Key(c.HashKeys, namespace, k)
 }
 
 // wrapper for closing a connection that ignores errors.  This is defined
@@ -63,8 +63,8 @@ func (c *Cache) Unmarshal(response interface{}, err error) ([]byte, bool, error)
 }
 
 // Set saves the (key, value) pair in Cache using the key
-// gcutils.Key(k, namespace...).
-func (c *Cache) Set(k string, value interface{}, namespace ...string) error {
+// gcutils.Key(namespace, k).
+func (c *Cache) Set(namespace []string, k string, value interface{}) error {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
 
@@ -72,12 +72,12 @@ func (c *Cache) Set(k string, value interface{}, namespace ...string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Do("SET", c.Key(k, namespace...), data)
+	_, err = conn.Do("SET", c.Key(namespace, k), data)
 	return err
 }
 
 // HSet stores the (field, value) pair in the hash keyed by gcutils.Key(k, namespace).
-func (c *Cache) HSet(k string, field string, value interface{}, namespace ...string) error {
+func (c *Cache) HSet(namespace []string, k string, field string, value interface{}) error {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
 
@@ -85,36 +85,36 @@ func (c *Cache) HSet(k string, field string, value interface{}, namespace ...str
 	if err != nil {
 		return err
 	}
-	_, err = conn.Do("HMSET", c.Key(k, namespace...), field, data)
+	_, err = conn.Do("HMSET", c.Key(namespace, k), field, data)
 	return err
 }
 
 // Get the value stored at gcutils.Key(k, namespace).
-func (c *Cache) Get(k string, namespace ...string) ([]byte, bool, error) {
+func (c *Cache) Get(namespace []string, k string) ([]byte, bool, error) {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
-	return c.Unmarshal(conn.Do("GET", c.Key(k, namespace...)))
+	return c.Unmarshal(conn.Do("GET", c.Key(namespace, k)))
 }
 
 // HGet wraps the Cache Hash Get function.
-func (c *Cache) HGet(k string, field string, namespace ...string) ([]byte, bool, error) {
+func (c *Cache) HGet(namespace []string, k string, field string) ([]byte, bool, error) {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
-	return c.Unmarshal(conn.Do("HGET", c.Key(k, namespace...), field))
+	return c.Unmarshal(conn.Do("HGET", c.Key(namespace, k), field))
 }
 
 // Del deletes the value stored at gcutils.Key(k, namespace)
-func (c *Cache) Del(k string, namespace ...string) error {
+func (c *Cache) Del(namespace []string, k string) error {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
-	_, err := conn.Do("DEL", c.Key(k, namespace...))
+	_, err := conn.Do("DEL", c.Key(namespace, k))
 	return err
 }
 
 // HDel deletes the field from the hash keyed by gcutils.Key(k, namespace)
-func (c *Cache) HDel(k string, field string, namespace ...string) error {
+func (c *Cache) HDel(namespace []string, k string, field string) error {
 	conn := c.Pool.Get()
 	defer c.Close(conn)
-	_, err := conn.Do("HDEL", c.Key(k, namespace...), field)
+	_, err := conn.Do("HDEL", c.Key(namespace, k), field)
 	return err
 }

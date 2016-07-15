@@ -12,18 +12,23 @@ func Sha1(key string) string {
 	return hex.EncodeToString(hk[:])
 }
 
-func maybeSha1(key string, hash bool) string {
+func maybeSha1(hash bool, key string) string {
 	if hash {
 		key = Sha1(key)
 	}
 	return key
 }
 
+// Namespace converts variadic string input into a slice of strings.
+func Namespace(ns ...string) []string {
+	return ns
+}
+
 // Key computes a full key from the input and namespace.  If the hash
 // flag is set, the final component k is sha1 hashed.
 //
-// For example, Key(true, "key", "n0", "n1"}) -> n0:n1:Sha1("key")
-func Key(hash bool, k string, namespace ...string) string {
-	namespace = append(namespace, maybeSha1(k, hash))
+// For example, Key(true, []string{"n0", "n1"}, "key"}) -> n0:n1:Sha1("key")
+func Key(hash bool, namespace []string, k string) string {
+	namespace = append(namespace, maybeSha1(hash, k))
 	return strings.Join(namespace, ":")
 }
